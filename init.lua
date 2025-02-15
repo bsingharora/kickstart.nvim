@@ -284,6 +284,28 @@ require('lazy').setup({
     },
   },
 
+  {
+    'tpope/vim-fugitive',
+    lazy = false,
+    keys = {
+      {
+        '<leader>gs',
+        function()
+          vim.cmd 'vert Git'
+        end,
+        desc = 'git fugitive',
+      },
+      { '<leader>gv', ':Gvdiffsplit ', desc = 'git diff split' },
+      {
+        '<leader>gG',
+        function()
+          vim.cmd 'vert Git grep <cexpr>'
+        end,
+        desc = 'git grep vert',
+      },
+    },
+  },
+
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
   -- This is often very useful to both group configuration, as well as handle
@@ -419,6 +441,7 @@ require('lazy').setup({
           },
         },
       }
+      require('telescope').load_extension 'git_grep'
 
       -- Enable Telescope extensions if they are installed
       pcall(require('telescope').load_extension, 'fzf')
@@ -435,6 +458,10 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>gg', function()
+        require('git_grep').grep()
+      end)
+
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
       -- Slightly advanced example of overriding default behavior and theme
@@ -671,10 +698,10 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
+        clangd = {},
+        gopls = {},
+        pyright = {},
+        rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -894,7 +921,10 @@ require('lazy').setup({
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'desert'
+
+      -- You can configure highlights by doing something like:
+      vim.cmd.hi 'Comment gui=none'
     end,
   },
 
@@ -962,6 +992,48 @@ require('lazy').setup({
     --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+  },
+  {
+    'davvid/telescope-git-grep.nvim',
+  },
+  { 'cordx56/rustowl', dependencies = {
+    'neovim/nvim-lspconfig',
+  } },
+  {
+    'David-Kunz/gen.nvim',
+    opts = {
+      model = 'llama3', -- The default model to use.
+      quit_map = 'q', -- set keymap to close the response window
+      retry_map = '<c-r>', -- set keymap to re-send the current prompt
+      accept_map = '<c-cr>', -- set keymap to replace the previous selection with the last result
+      host = 'localhost', -- The host running the Ollama service.
+      port = '11434', -- The port on which the Ollama service is listening.
+      display_mode = 'split', -- The display mode. Can be "float" or "split" or "horizontal-split".
+      show_prompt = false, -- Shows the prompt submitted to Ollama. Can be true (3 lines) or "full".
+      show_model = false, -- Displays which model you are using at the beginning of your chat session.
+      no_auto_close = false, -- Never closes the window automatically.
+      file = false, -- Write the payload to a temporary file to keep the command short.
+      hidden = false, -- Hide the generation window (if true, will implicitly set `prompt.replace = true`), requires Neovim >= 0.10
+      -- init = function(options) pcall(io.popen, "ollama serve > /dev/null 2>&1 &") end,
+      -- Function to initialize Ollama
+      command = function(options)
+        local body = { model = options.model, stream = true }
+        return 'curl --silent --no-buffer -X POST http://' .. options.host .. ':' .. options.port .. '/api/chat -d $body'
+      end,
+      -- The command for the Ollama service. You can use placeholders $prompt, $model and $body (shellescaped).
+      -- This can also be a command string.
+      -- The executed command must return a JSON object with { response, context }
+      -- (context property is optional).
+      -- list_models = '<omitted lua function>', -- Retrieves a list of model names
+      result_filetype = 'markdown', -- Configure filetype of the result buffer
+      debug = false, -- Prints errors and the command which is run.
+    },
+    config = function(_, opts)
+      require('gen').setup(opts) -- Ensure the plugin is properly set up.
+      -- Keymaps for Gen.nvim
+      vim.keymap.set({ 'n', 'v' }, '<leader>oc', ':Gen Chat<CR>', { desc = 'Open Gen Chat' })
+      vim.keymap.set('v', '<leader>os', ':Gen Summarize<CR>', { desc = 'Summarize with Gen' })
+    end,
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
