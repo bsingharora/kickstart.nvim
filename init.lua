@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -598,6 +598,28 @@ require('lazy').setup({
           --  Useful when you're not sure what type a variable is and you want to see
           --  the definition of its *type*, not where it was *defined*.
           map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
+          map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
+
+          -- Fuzzy find all the symbols in your current document.
+          --  Symbols are things like variables, functions, types, etc.
+          map('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
+
+          -- Fuzzy find all the symbols in your current workspace.
+          --  Similar to document symbols, except searches over your entire project.
+          map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
+
+          -- Rename the variable under your cursor.
+          --  Most Language Servers support renaming across files, etc.
+          map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
+
+          -- Execute a code action, usually your cursor needs to be on top of an error
+          -- or a suggestion from your LSP for this to activate.
+          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+
+          -- WARN: This is not Goto Definition, this is Goto Declaration.
+          --  For example, in C this would take you to the header.
+          map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('g0', vim.lsp.buf.document_symbol, '[G]oto D[0]cumentation')
 
           -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
           ---@param client vim.lsp.Client
@@ -996,13 +1018,37 @@ require('lazy').setup({
   {
     'davvid/telescope-git-grep.nvim',
   },
-  { 'cordx56/rustowl', dependencies = {
-    'neovim/nvim-lspconfig',
-  } },
+  --{
+  --'cordx56/rustowl',
+  --dependencies = {
+  --  'neovim/nvim-lspconfig',
+  --},
+  --config = function()
+  --  local lspconfig = require 'lspconfig'
+  --  lspconfig.rustowlsp.setup {}
+  --end,
+  --},
+  {
+    'simrat39/rust-tools.nvim',
+    config = function()
+      local rt = require 'rust-tools'
+
+      rt.setup {
+        server = {
+          on_attach = function(_, bufnr)
+            -- Hover actions
+            vim.keymap.set('n', '<C-space>', rt.hover_actions.hover_actions, { buffer = bufnr })
+            -- Code action groups
+            vim.keymap.set('n', '<Leader>a', rt.code_action_group.code_action_group, { buffer = bufnr })
+          end,
+        },
+      }
+    end,
+  },
   {
     'David-Kunz/gen.nvim',
     opts = {
-      model = 'llama3', -- The default model to use.
+      model = 'llama3.1:8b', -- The default model to use.
       quit_map = 'q', -- set keymap to close the response window
       retry_map = '<c-r>', -- set keymap to re-send the current prompt
       accept_map = '<c-cr>', -- set keymap to replace the previous selection with the last result
@@ -1031,7 +1077,7 @@ require('lazy').setup({
     config = function(_, opts)
       require('gen').setup(opts) -- Ensure the plugin is properly set up.
       -- Keymaps for Gen.nvim
-      vim.keymap.set({ 'n', 'v' }, '<leader>oc', ':Gen Chat<CR>', { desc = 'Open Gen Chat' })
+      vim.keymap.set({ 'n', 'v' }, '<leader>oc', ':Gen Ask<CR>', { desc = 'Open Gen Chat' })
       vim.keymap.set('v', '<leader>os', ':Gen Summarize<CR>', { desc = 'Summarize with Gen' })
     end,
   },
