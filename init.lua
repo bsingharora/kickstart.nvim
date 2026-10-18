@@ -799,8 +799,13 @@ require('lazy').setup({
   {
     'OXY2DEV/markview.nvim',
     lazy = false,
+    opts = {
+      experimental = {
+        check_rtp = false,
+        check_rtp_message = false,
+      },
+    },
     dependencies = {
-      'nvim-treesitter/nvim-treesitter',
       'nvim-tree/nvim-web-devicons',
     },
     keys = {
