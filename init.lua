@@ -219,6 +219,15 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Enable conceal level for markdown files (needed for rich markdown preview)
+vim.api.nvim_create_autocmd('FileType', {
+  desc = 'Enable conceallevel for markdown preview',
+  pattern = { 'markdown', 'markdown.mdx' },
+  callback = function()
+    vim.opt_local.conceallevel = 2
+  end,
+})
+
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
@@ -369,6 +378,7 @@ require('lazy').setup({
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]oggle' },
         { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } },
+        { '<leader>m', group = '[M]arkdown' },
       },
     },
   },
@@ -784,23 +794,36 @@ require('lazy').setup({
       }
     end,
   },
+  -- Markdown preview plugins
+  -- 1) In-editor rich preview (inline and split window preview)
   {
-    'nvim-treesitter/nvim-treesitter',
-    dependencies = { 'OXY2DEV/markview.nvim' },
+    'OXY2DEV/markview.nvim',
     lazy = false,
-
-    -- ... All other options.
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      'nvim-tree/nvim-web-devicons',
+    },
+    keys = {
+      { '<leader>mt', '<cmd>Markview toggle<cr>', desc = '[M]arkdown [T]oggle in-buffer preview' },
+      { '<leader>ms', '<cmd>Markview splitToggle<cr>', desc = '[M]arkdown [S]plit preview' },
+    },
   },
 
-  -- install with yarn or npm
+  -- 2) Browser live preview with synchronized scrolling
   {
     'iamcco/markdown-preview.nvim',
     cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
-    build = 'cd app && yarn install',
+    build = function()
+      vim.fn['mkdp#util#install']()
+    end,
     init = function()
       vim.g.mkdp_filetypes = { 'markdown' }
+      vim.g.mkdp_auto_close = 1
     end,
     ft = { 'markdown' },
+    keys = {
+      { '<leader>mp', '<cmd>MarkdownPreviewToggle<cr>', desc = '[M]arkdown [P]review in browser' },
+    },
   },
   { -- Autoformat
     'stevearc/conform.nvim',
